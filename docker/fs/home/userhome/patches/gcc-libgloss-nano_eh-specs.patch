@@ -1,20 +1,33 @@
---- a/src/newlib/libgloss/arm/Makefile.in
-+++ b/src/newlib/libgloss/arm/Makefile.in
-@@ -62,7 +62,7 @@
- @BUILD_CRT0_FALSE@CRT0		=
- @BUILD_CRT0_FALSE@CRT0_INSTALL	=
+diff -ruN b/src/newlib-cygwin/libgloss/Makefile.in a/src/newlib-cygwin/libgloss/Makefile.in
+--- b/src/newlib-cygwin/libgloss/Makefile.in	2024-06-06 17:19:06.000000000 +0000
++++ a/src/newlib-cygwin/libgloss/Makefile.in	2024-07-12 08:27:01.213048385 +0000
+@@ -2165,7 +2165,7 @@
+ @CONFIG_ARC_TRUE@arc_libemsk_uart_a_SOURCES = arc/emsk-uart-setup.c
+ @CONFIG_ARC_TRUE@arc_libemsdp_uart_a_CPPFLAGS = -I$(srcdir)/arc
+ @CONFIG_ARC_TRUE@arc_libemsdp_uart_a_SOURCES = arc/emsdp-uart-setup.c
+-@CONFIG_ARM_TRUE@arm_SPECS = arm/nano.specs arm/linux.specs \
++@CONFIG_ARM_TRUE@arm_SPECS = arm/nano.specs arm/nano_eh.specs arm/linux.specs \
+ @CONFIG_ARM_TRUE@	arm/redboot.ld arm/redboot.specs \
+ @CONFIG_ARM_TRUE@	arm/rdpmon.specs arm/rdimon.specs \
+ @CONFIG_ARM_TRUE@	arm/rdimon-v2m.specs \
+diff -ruN b/src/newlib-cygwin/libgloss/arm/Makefile.inc a/src/newlib-cygwin/libgloss/arm/Makefile.inc
+--- b/src/newlib-cygwin/libgloss/arm/Makefile.inc	2024-06-06 17:19:06.000000000 +0000
++++ a/src/newlib-cygwin/libgloss/arm/Makefile.inc	2024-07-12 08:23:00.278561878 +0000
+@@ -6,6 +6,7 @@
  
--NANO_SCRIPTS=nano.specs
-+NANO_SCRIPTS=nano.specs nano_eh.specs
- NANO_INSTALL=install-nano
+ ## nano files.
+ %C%_SPECS += %D%/nano.specs
++%C%_SPECS += %D%/nano_eh.specs
  
- LINUX_CRT0    = linux-crt0.o
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ b/src/newlib/libgloss/arm/elf-nano_eh.specs	2022-03-22 08:19:39.956481010 +0000
+ ## Linux files.
+ %C%_SPECS += %D%/linux.specs
+diff -ruN b/src/newlib-cygwin/libgloss/arm/elf-nano_eh.specs a/src/newlib-cygwin/libgloss/arm/elf-nano_eh.specs
+--- b/src/newlib-cygwin/libgloss/arm/elf-nano_eh.specs	1970-01-01 00:00:00.000000000 +0000
++++ a/src/newlib-cygwin/libgloss/arm/elf-nano_eh.specs	2024-07-12 08:23:00.278561878 +0000
 @@ -0,0 +1,22 @@
 +%rename link                nano_eh_link
 +%rename link_gcc_c_sequence                nano_eh_link_gcc_c_sequence
-+%rename cpp_unique_options		nano_eh_cpp_unique_options
++%rename cpp_unique_options             nano_eh_cpp_unique_options
 +
 +*cpp_unique_options:
 +-isystem =/include/newlib-nano %(nano_eh_cpp_unique_options)

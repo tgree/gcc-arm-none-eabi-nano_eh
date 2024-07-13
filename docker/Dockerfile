@@ -1,7 +1,7 @@
-# Copyright (c) 2022 by Terry Greeniaus.
-# Build with: docker build -t gcc-arm-none-eabi-10.3-2021.10-nano_eh-build .
-# Run with  : docker run -ti gcc-arm-none-eabi-10.3-2021.10-nano_eh-build
-FROM ubuntu:20.04
+# Copyright (c) 2022-2024 by Terry Greeniaus.
+# Build with: docker build -t gcc-arm-none-eabi-13.3.rel1-nano_eh-build .
+# Run with  : docker run -ti gcc-arm-none-eabi-13.3.rel1-nano_eh-build
+FROM ubuntu:24.04
 
 # Set the locale.
 ENV LANG C.UTF-8
@@ -9,58 +9,36 @@ ENV LANG C.UTF-8
 # Un-minimize to start with.
 RUN yes | unminimize
 
-# Install the base OS and gcc build dependency packages.
-RUN apt-get update                                      \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y   \
-    bzip2                                               \
-    curl                                                \
-    g++                                                 \
-    gcc                                                 \
-    git                                                 \
-    make                                                \
-    man                                                 \
-    manpages                                            \
-    manpages-dev                                        \
-    tig                                                 \
-    tmux                                                \
-    vim                                                 \
-    autoconf                                            \
-    autogen                                             \
-    bison                                               \
-    build-essential                                     \
-    dejagnu                                             \
-    flex                                                \
-    flip                                                \
-    gawk                                                \
-    gperf                                               \
-    gzip                                                \
-    libisl-dev                                          \
-    libncurses5-dev                                     \
-    nsis                                                \
-    openssh-client                                      \
-    p7zip-full                                          \
-    perl                                                \
-    python-dev                                          \
-    scons                                               \
-    tcl                                                 \
-    texinfo                                             \
-    texlive                                             \
-    texlive-extra-utils                                 \
-    tofrodos                                            \
-    wget                                                \
-    zip
-
 # Make a download location in /tmp.
 RUN mkdir /tmp/download-images
 
 # Install gcc-arm-none-eabi sources.
-RUN curl -L "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-src.tar.bz2" \
-         -o /tmp/download-images/gcc-arm-none-eabi-10.3-2021.10-src.tar.bz2
+ADD https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/srcrel/arm-gnu-toolchain-src-snapshot-13.3.rel1.tar.xz /tmp/download-images/
+
+# Install the base OS and gcc build dependency packages.
+RUN apt-get update                                      \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y   \
+    bison                                               \
+    flex                                                \
+    g++                                                 \
+    gcc                                                 \
+    git                                                 \
+    gzip                                                \
+    m4                                                  \
+    make                                                \
+    python3                                             \
+    python3-dev                                         \
+    sudo                                                \
+    texinfo                                             \
+    vim                                                 \
+    xz-utils                                            \
+    zip
 
 # Set up the gccbuild user.
 COPY fs/home/userhome /home/gccbuild
 RUN useradd -M -s /bin/bash gccbuild                    \
- && echo gccbuild:password | chpasswd
+ && echo gccbuild:password | chpasswd                   \
+ && adduser gccbuild sudo
 
 # Move all downloads into the user's home directory.
 RUN mv /tmp/download-images/* /home/gccbuild/           \
@@ -72,13 +50,14 @@ RUN mv /tmp/download-images/* /home/gccbuild/           \
 USER gccbuild
 WORKDIR /home/gccbuild
 
+# Clone the gnu-devtools-for-arm repository.
+RUN mkdir src \
+    && git clone -b gcc-arm-none-eabi-13.3.rel1-nano_eh https://github.com/tgree/gnu-devtools-for-arm-nano_eh.git src/gnu-devtools-for-arm \
+    && ln -s src/gnu-devtools-for-arm/build-gnu-toolchain.sh
+
 # Verify the MD5 sums on all downloaded files.  These should match the MD5
-# sums listed on ARM's web site:
-#
-#    https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
-#
-# Unfortunately there doesn't seem to be a programmatic way to retrieve just
-# the MD5 sums, so we embed them in a file called gcc_md5_sums.txt which you
-# can manually verify.
-RUN md5sum -c gcc_md5_sums.txt \
-    && tar xf gcc-arm-none-eabi-10.3-2021.10-src.tar.bz2
+# sums listed on ARM's web site.  We embed the MD5 sum file taken from Arm's
+# site to ensure that nothing is changed on us in the future without detecting
+# it.
+RUN md5sum -c arm-gnu-toolchain-src-snapshot-13.3.rel1.tar.xz.asc \
+    && tar xf arm-gnu-toolchain-src-snapshot-13.3.rel1.tar.xz -C src/
